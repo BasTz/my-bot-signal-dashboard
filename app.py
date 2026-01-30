@@ -84,9 +84,15 @@ ytd_data = fetch_ytd_data(selected_year)
 # 4. แสดงผลข้อมูล
 if history_data or global_data or ytd_data:
     # 4.0 YTD History (New Section)
+    latest_cum_pnl = 0.0
     if ytd_data and isinstance(ytd_data, list):
-        ytd_df = pd.DataFrame(ytd_data)
-        if 'date' in ytd_df.columns:
+         ytd_df = pd.DataFrame(ytd_data)
+         if not ytd_df.empty and 'cumulative_pnl' in ytd_df.columns:
+             latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl']
+
+         st.subheader(f"YTD Performance ({selected_year}) - Total: {latest_cum_pnl:,.4f} USD")
+         
+         if 'date' in ytd_df.columns:
             ytd_df['date'] = pd.to_datetime(ytd_df['date'])
             
             # Create tabs for Cumulative PNL and Daily Income
@@ -103,10 +109,7 @@ if history_data or global_data or ytd_data:
                     ]
                 )
                 st.altair_chart(chart_cum, use_container_width=True)
-                
-                # Show latest cumulative PNL
-                latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if not ytd_df.empty else 0
-
+            
             with tab2:
                 # Altair Chart for Daily Income (with color coding)
                 chart_income = alt.Chart(ytd_df).mark_bar().encode(
@@ -123,8 +126,6 @@ if history_data or global_data or ytd_data:
                     ]
                 )
                 st.altair_chart(chart_income, use_container_width=True)
-                
-        st.subheader(f"YTD Performance ({selected_year})\nTotal Cumulative PNL ({selected_year}) {latest_cum_pnl:,.4f} USD")
 
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
