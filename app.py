@@ -263,7 +263,7 @@ if history_data or global_data or ytd_data or position_data:
             domain_max = y_max + pad
             
             # Default color
-            line_color = alt.value("#29b5e8")
+            line_color = "#29b5e8"
 
             if y_max > 0 and y_min < 0:
                 # Calculate ratio for 0
@@ -280,14 +280,13 @@ if history_data or global_data or ytd_data or position_data:
                     x1=1, x2=1, y1=1, y2=0
                 )
             elif y_min >= 0:
-                line_color = alt.value("#2ecc71") # All Green
+                line_color = "#2ecc71" # All Green
             elif y_max <= 0:
-                line_color = alt.value("#e74c3c") # All Red
+                line_color = "#e74c3c" # All Red
 
-            chart_cum = alt.Chart(ytd_df).mark_line().encode(
+            chart_cum = alt.Chart(ytd_df).mark_line(color=line_color).encode(
                 x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
                 y=alt.Y('cumulative_pnl:Q', title='Cumulative PNL (USD)', scale=alt.Scale(domain=[domain_min, domain_max])),
-                color=line_color,
                 tooltip=[
                     alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
                     alt.Tooltip('cumulative_pnl', title='Cum. PNL', format=',.4f')
