@@ -322,11 +322,9 @@ if history_data or global_data or ytd_data or position_data:
                  if 'uPNL' in pos_df.columns: pos_df['upnl'] = pos_df['uPNL']
                  if 'Symbol' in pos_df.columns: pos_df['symbol'] = pos_df['Symbol']
 
-                 pos_df['label'] = pos_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
-
                  base = alt.Chart(pos_df).encode(
-                    x=alt.X('label:N', axis=alt.Axis(title='', labelAngle=0), sort=alt.EncodingSortField(field="upnl", order="ascending")),
-                    y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                    x=alt.X('upnl:Q', title='uPNL (USD)'),
+                    y=alt.Y('symbol:N', title='', sort=alt.EncodingSortField(field="upnl", order="descending")),
                     tooltip=['Symbol', 'uPNL', 'Side']
                  )
 
@@ -336,8 +334,13 @@ if history_data or global_data or ytd_data or position_data:
                         alt.value("#2ecc71"),  # Green
                         alt.value("#e74c3c")   # Red
                     )
-                 ) + base.mark_text(dy= -5 if pos_df['upnl'].max() < 0 else 5).encode(
-                     text=alt.Text('upnl:Q', format='.2f')
+                 ) + base.mark_text(
+                     align='left',
+                     baseline='middle',
+                     dx=3  # Offset text to the right of the bar
+                 ).encode(
+                     text=alt.Text('upnl:Q', format='.2f'),
+                     color=alt.value('white') # Make text readable on dark background
                  )
                  st.altair_chart(chart_upnl, use_container_width=True)
                  
@@ -347,11 +350,9 @@ if history_data or global_data or ytd_data or position_data:
             elif not df.empty:
                 # Altair Bar Chart for Latest UPNL with Custom Labels (Fallback)
                 latest_df = df[df['ts'] == latest_ts].copy()
-                latest_df['label'] = latest_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
-
                 base = alt.Chart(latest_df).encode(
-                    x=alt.X('label:N', axis=alt.Axis(title='', labelAngle=0), sort=alt.EncodingSortField(field="upnl", order="ascending")),
-                    y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                    x=alt.X('upnl:Q', title='uPNL (USD)'),
+                    y=alt.Y('symbol:N', title='', sort=alt.EncodingSortField(field="upnl", order="descending")),
                     tooltip=['symbol', 'upnl', 'datetime']
                 )
 
@@ -361,8 +362,13 @@ if history_data or global_data or ytd_data or position_data:
                         alt.value("#2ecc71"),  # Green
                         alt.value("#e74c3c")   # Red
                     )
-                ) + base.mark_text(dy= -5 if latest_df['upnl'].max() < 0 else 5).encode(
-                     text=alt.Text('upnl:Q', format='.2f')
+                ) + base.mark_text(
+                     align='left',
+                     baseline='middle',
+                     dx=3
+                ).encode(
+                     text=alt.Text('upnl:Q', format='.2f'),
+                     color=alt.value('white')
                 )
                 
                 st.altair_chart(chart_upnl, use_container_width=True)
