@@ -252,10 +252,7 @@ if history_data or global_data or ytd_data or position_data:
                 # Show Colorful Report
                 st.markdown(html_report, unsafe_allow_html=True)
 
-                html_report += "</table></div>"
 
-                # Show Colorful Report
-                st.markdown(html_report, unsafe_allow_html=True)
              
              st.subheader("15m Total Unrealized PNL")
              # Altair Chart for Global PNL (Locked)
