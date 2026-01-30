@@ -90,7 +90,7 @@ if history_data or global_data or ytd_data:
          if not ytd_df.empty and 'cumulative_pnl' in ytd_df.columns:
              latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl']
 
-         st.subheader(f"YTD Performance ({selected_year}) - Total: {latest_cum_pnl:,.4f} USD")
+         st.subheader(f"YTD Performance ({selected_year}) | Total: {latest_cum_pnl:,.4f} USD")
          
          if 'date' in ytd_df.columns:
             ytd_df['date'] = pd.to_datetime(ytd_df['date'])
@@ -143,7 +143,16 @@ if history_data or global_data or ytd_data:
                 current_total_upnl = latest_global['upnl']
                 
              st.subheader("15m Total Unrealized PNL")
-             st.line_chart(global_df.set_index('datetime')['upnl'])
+             # Altair Chart for Global PNL (Locked)
+             chart_global = alt.Chart(global_df).mark_line().encode(
+                 x=alt.X('datetime:T', title='Time', axis=alt.Axis(format='%H:%M')),
+                 y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                 tooltip=[
+                     alt.Tooltip('datetime', title='Time', format='%H:%M:%S'),
+                     alt.Tooltip('upnl', title='uPNL', format=',.2f')
+                 ]
+             )
+             st.altair_chart(chart_global, use_container_width=True)
 
     # 4.2 Symbol Data Processing
     active_symbols_count = 0
@@ -164,7 +173,18 @@ if history_data or global_data or ytd_data:
             active_symbols_count = len(df[df['ts'] == latest_ts])
 
             st.subheader("uPNL History per Symbol")
-            st.line_chart(chart_df)
+            # Altair Chart for Symbol History (Locked)
+            chart_symbols = alt.Chart(df).mark_line().encode(
+                x=alt.X('datetime:T', title='Time', axis=alt.Axis(format='%H:%M')),
+                y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                color=alt.Color('symbol:N', title='Symbol'),
+                tooltip=[
+                    alt.Tooltip('datetime', title='Time', format='%H:%M:%S'),
+                    'symbol',
+                    alt.Tooltip('upnl', title='uPNL', format=',.2f')
+                ]
+            )
+            st.altair_chart(chart_symbols, use_container_width=True)
 
             # Bar Chart for Latest UPNL
             st.subheader("Current uPNL by Symbol")
