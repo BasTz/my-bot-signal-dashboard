@@ -183,6 +183,12 @@ if history_data or global_data or ytd_data or position_data:
                 if not is_using_live_pos:
                     fallback_warning = '<span style="color:#e67e22; font-size:0.8em; margin-left:10px;">(⚠️ History Data - Live API Failed)</span>'
 
+                # Initialize session state for symbol-wise diff if not present
+                if 'prev_pos_map' not in st.session_state:
+                    st.session_state['prev_pos_map'] = {}
+                
+                current_pos_map = {}
+
                 html_report = f"""
                 <div style="background-color:#1E1E1E; padding:15px; border-radius:10px; border:1px solid #333;">
                     <h4 style="margin-top:0; color:white;">💰 Total uPNL: <span style="color:{'#2ecc71' if current_total_upnl >= 0 else '#e74c3c'};">{current_total_upnl:+.2f} USD</span>{fallback_warning}</h4>
@@ -196,6 +202,7 @@ if history_data or global_data or ytd_data or position_data:
                                 <th style="text-align:left; color:#888; padding-bottom:5px;">Symbol</th>
                                 <th style="text-align:left; color:#888; padding-bottom:5px;">Side</th>
                                 <th style="text-align:right; color:#888; padding-bottom:5px;">uPNL</th>
+                                <th style="text-align:right; color:#888; padding-bottom:5px;">Diff (15m)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -209,19 +216,33 @@ if history_data or global_data or ytd_data or position_data:
                     if not isinstance(side, str): side = '-'
                     side = side.upper()
 
+                    # Calculate per-symbol diff
+                    prev_val = st.session_state['prev_pos_map'].get(sym, upnl) # Default to current if new
+                    sym_diff = upnl - prev_val
+                    current_pos_map[sym] = upnl # Store for next run
+
                     # Colors
                     side_color = "#2ecc71" if side == "LONG" else "#e74c3c" if side == "SHORT" else "#aaa"
                     pnl_color = "#2ecc71" if upnl >= 0 else "#e74c3c"
                     
+                    diff_color = "#aaa"
+                    diff_str = f"{sym_diff:+.2f}"
+                    if sym_diff > 0: diff_color = "#2ecc71"
+                    elif sym_diff < 0: diff_color = "#e74c3c"
+                    
                     # Add to HTML
-                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:30%;'>{sym}</td>"
-                    html_report += f"<td style='font-weight:bold; color:{side_color}; width:30%;'>{side}</td>"
-                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color};'>{upnl:+.2f} $</td></tr>"
+                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:25%;'>{sym}</td>"
+                    html_report += f"<td style='font-weight:bold; color:{side_color}; width:20%;'>{side}</td>"
+                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color}; width:25%;'>{upnl:+.2f} $</td>"
+                    html_report += f"<td style='text-align:right; font-family:monospace; color:{diff_color}; width:30%; font-size:0.9em;'>{diff_str}</td></tr>"
 
                     
                     # Add to Copy Msg
                     icon = "🟢" if upnl >= 0 else "🔴"
-                    copy_msg += f"`{sym:<6} | {side:<5}` {icon} `{upnl:+.2f} $`\n"
+                    copy_msg += f"`{sym:<6} | {side:<5}` {icon} `{upnl:+.2f} $` (`{sym_diff:+.2f}`)\n"
+                
+                # Update session state for next run
+                st.session_state['prev_pos_map'] = current_pos_map
 
                 html_report += "</tbody></table></div>"
 
@@ -238,7 +259,7 @@ if history_data or global_data or ytd_data or position_data:
                      alt.Tooltip('upnl', title='uPNL', format=',.2f')
                  ]
              )
-             st.altair_chart(chart_global, use_container_width=True)
+             st.altair_chart(chart_global, width="stretch")
                 
     # --- Inserted Cumulative PNL Chart here ---
     if ytd_data and isinstance(ytd_data, list):
@@ -292,7 +313,7 @@ if history_data or global_data or ytd_data or position_data:
                     alt.Tooltip('cumulative_pnl', title='Cum. PNL', format=',.4f')
                 ]
             )
-            st.altair_chart(chart_cum, use_container_width=True)
+            st.altair_chart(chart_cum, width="stretch")
             st.divider()
 
     # 4.2 Symbol Data Processing
@@ -369,10 +390,10 @@ if history_data or global_data or ytd_data or position_data:
                  )
 
                  chart_upnl = bars + text_pos + text_neg
-                 st.altair_chart(chart_upnl, use_container_width=True)
+                 st.altair_chart(chart_upnl, width="stretch")
                  
                  with st.expander("Show Raw Position Data"):
-                     st.dataframe(pos_df, use_container_width=True)
+                     st.dataframe(pos_df, width="stretch")
 
             elif not df.empty:
                 # Altair Bar Chart for Latest UPNL with Custom Labels (Fallback)
@@ -420,10 +441,10 @@ if history_data or global_data or ytd_data or position_data:
 
                 chart_upnl = bars + text_pos + text_neg
                 
-                st.altair_chart(chart_upnl, use_container_width=True)
+                st.altair_chart(chart_upnl, width="stretch")
                 
                 with st.expander("Show Raw Symbol Data"):
-                    st.dataframe(df.sort_values(by='datetime', ascending=False), use_container_width=True)
+                    st.dataframe(df.sort_values(by='datetime', ascending=False), width="stretch")
 
             st.subheader("uPNL History per Symbol")
             # Altair Chart for Symbol History (Locked)
@@ -437,7 +458,7 @@ if history_data or global_data or ytd_data or position_data:
                     alt.Tooltip('upnl', title='uPNL', format=',.2f')
                 ]
             )
-            st.altair_chart(chart_symbols, use_container_width=True)
+            st.altair_chart(chart_symbols, width="stretch")
 
     # 4.3 KPI Cards
     col1, col2 = st.columns(2)
