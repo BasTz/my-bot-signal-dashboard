@@ -303,7 +303,7 @@ if history_data or global_data or ytd_data or position_data:
             chart_symbols = alt.Chart(df).mark_line().encode(
                 x=alt.X('datetime:T', title='Time', axis=alt.Axis(format='%H:%M')),
                 y=alt.Y('upnl:Q', title='uPNL (USD)'),
-                color=alt.Color('symbol:N', title='Symbol'),
+                color=alt.Color('symbol:N', legend=alt.Legend(title='Symbol', orient='bottom')),
                 tooltip=[
                     alt.Tooltip('datetime', title='Time', format='%H:%M:%S'),
                     'symbol',
