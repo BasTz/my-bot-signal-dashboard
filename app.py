@@ -203,7 +203,7 @@ if history_data or global_data or ytd_data or position_data:
                 # --- Build HTML for Display (Colorful UI) ---
                 html_report = f"""
                 <div style="background-color:#1E1E1E; padding:15px; border-radius:10px; border:1px solid #333;">
-                    <h3 style="margin-top:0; color:white;">💰 Total uPNL: <span style="color:{'#2ecc71' if current_total_upnl >= 0 else '#e74c3c'};">{current_total_upnl:+.2f} USD</span></h3>
+                    <h4 style="margin-top:0; color:white;">💰 Total uPNL: <span style="color:{'#2ecc71' if current_total_upnl >= 0 else '#e74c3c'};">{current_total_upnl:+.2f} USD</span></h4>
                     <p style="color:#aaa; margin-bottom:5px;">📉 15m Change: <span style="color:{'#2ecc71' if diff >= 0 else '#e74c3c'};">{diff:+.2f} USD</span></p>
                     <p style="color:#aaa; margin-bottom:5px;">💰 Day Realized: <span style="color:{'#2ecc71' if realized_pnl >= 0 else '#e74c3c'};">{realized_pnl:+.2f} USD</span></p>
                     <p style="color:#aaa; margin-bottom:15px;">📈 YTD Realized: <span style="color:{'#2ecc71' if ytd_pnl >= 0 else '#e74c3c'};">{ytd_pnl:+.2f} USD</span></p>
