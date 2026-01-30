@@ -85,7 +85,6 @@ ytd_data = fetch_ytd_data(selected_year)
 if history_data or global_data or ytd_data:
     # 4.0 YTD History (New Section)
     if ytd_data and isinstance(ytd_data, list):
-        st.subheader(f"YTD Performance ({selected_year})\nTotal Cumulative PNL ({selected_year}) {latest_cum_pnl:,.4f} USD")
         ytd_df = pd.DataFrame(ytd_data)
         if 'date' in ytd_df.columns:
             ytd_df['date'] = pd.to_datetime(ytd_df['date'])
@@ -124,6 +123,8 @@ if history_data or global_data or ytd_data:
                     ]
                 )
                 st.altair_chart(chart_income, use_container_width=True)
+                
+        st.subheader(f"YTD Performance ({selected_year})\nTotal Cumulative PNL ({selected_year}) {latest_cum_pnl:,.4f} USD")
 
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
