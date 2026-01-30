@@ -302,20 +302,6 @@ if history_data or global_data or ytd_data or position_data:
             latest_pnl_for_sort = df[df['ts'] == latest_ts].sort_values('upnl', ascending=False)
             symbol_sort_order = latest_pnl_for_sort['symbol'].tolist()
 
-            st.subheader("uPNL History per Symbol")
-            # Altair Chart for Symbol History (Locked)
-            chart_symbols = alt.Chart(df).mark_line().encode(
-                x=alt.X('datetime:T', title='Time', axis=alt.Axis(format='%H:%M')),
-                y=alt.Y('upnl:Q', title='uPNL (USD)'),
-                color=alt.Color('symbol:N', sort=symbol_sort_order, legend=alt.Legend(title=None, orient='bottom', columns=6)),
-                tooltip=[
-                    alt.Tooltip('datetime', title='Time', format='%H:%M:%S'),
-                    'symbol',
-                    alt.Tooltip('upnl', title='uPNL', format=',.2f')
-                ]
-            )
-            st.altair_chart(chart_symbols, use_container_width=True)
-
             # Bar Chart for Latest UPNL
             st.subheader("Current uPNL by Symbol")
             
@@ -422,6 +408,20 @@ if history_data or global_data or ytd_data or position_data:
                 
                 with st.expander("Show Raw Symbol Data"):
                     st.dataframe(df.sort_values(by='datetime', ascending=False), use_container_width=True)
+
+            st.subheader("uPNL History per Symbol")
+            # Altair Chart for Symbol History (Locked)
+            chart_symbols = alt.Chart(df).mark_line().encode(
+                x=alt.X('datetime:T', title='Time', axis=alt.Axis(format='%H:%M')),
+                y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                color=alt.Color('symbol:N', sort=symbol_sort_order, legend=alt.Legend(title=None, orient='bottom', columns=5)),
+                tooltip=[
+                    alt.Tooltip('datetime', title='Time', format='%H:%M:%S'),
+                    'symbol',
+                    alt.Tooltip('upnl', title='uPNL', format=',.2f')
+                ]
+            )
+            st.altair_chart(chart_symbols, use_container_width=True)
 
     # 4.3 KPI Cards
     col1, col2 = st.columns(2)
