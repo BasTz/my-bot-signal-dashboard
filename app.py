@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import requests
 import os
+import altair as alt
 import time
 
 # 1. ตั้งค่าหน้าเว็บให้ดูบนมือถือสวยๆ
@@ -78,22 +79,42 @@ if history_data or global_data or ytd_data:
         ytd_df = pd.DataFrame(ytd_data)
         if 'date' in ytd_df.columns:
             ytd_df['date'] = pd.to_datetime(ytd_df['date'])
-            # Format date as DD/MM for simpler display (removes Mon, Tue, etc.)
-            ytd_df['date_display'] = ytd_df['date'].dt.strftime('%d/%m')
             
             # Create tabs for Cumulative PNL and Daily Income
             tab1, tab2 = st.tabs(["Cumulative PNL", "Daily Income"])
             
             with tab1:
-                # Use date_display as index for the chart
-                st.line_chart(ytd_df.set_index('date_display')['cumulative_pnl'], color="#29b5e8")
+                # Altair Chart for Cumulative PNL
+                chart_cum = alt.Chart(ytd_df).mark_line(color="#29b5e8").encode(
+                    x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
+                    y=alt.Y('cumulative_pnl:Q', title='Cumulative PNL (USD)'),
+                    tooltip=[
+                        alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
+                        alt.Tooltip('cumulative_pnl', title='Cum. PNL', format=',.4f')
+                    ]
+                )
+                st.altair_chart(chart_cum, use_container_width=True)
                 
                 # Show latest cumulative PNL
                 latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if not ytd_df.empty else 0
                 st.metric(f"Total Cumulative PNL ({selected_year})", f"{latest_cum_pnl:,.4f} USD")
 
             with tab2:
-                st.bar_chart(ytd_df.set_index('date_display')['income'])
+                # Altair Chart for Daily Income (with color coding)
+                chart_income = alt.Chart(ytd_df).mark_bar().encode(
+                    x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
+                    y=alt.Y('income:Q', title='Daily Income (USD)'),
+                    color=alt.condition(
+                        alt.datum.income >= 0,
+                        alt.value("#2ecc71"),  # Green
+                        alt.value("#e74c3c")   # Red
+                    ),
+                    tooltip=[
+                        alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
+                        alt.Tooltip('income', title='Income', format=',.4f')
+                    ]
+                )
+                st.altair_chart(chart_income, use_container_width=True)
 
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
