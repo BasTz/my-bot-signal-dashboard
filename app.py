@@ -21,14 +21,24 @@ except (FileNotFoundError, KeyError):
     # ถ้าไม่มี ให้ใช้ค่า Default หรือจาก Environment Variable
     API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 
+# Configuration: API Key Authentication
+try:
+    API_ACCESS_KEY = st.secrets["API_ACCESS_KEY"]
+except (FileNotFoundError, KeyError):
+    API_ACCESS_KEY = os.environ.get("API_ACCESS_KEY", "mysecretkey")
+
+def get_headers():
+    return {"X-API-Key": API_ACCESS_KEY}
+
 # 3. ดึงข้อมูลจาก API
 @st.cache_data(ttl=60)
 def fetch_data():
+    headers = get_headers()
     # 1. Fetch Symbol History
     history_url = f"{API_BASE_URL}/pnl/history"
     history_data = []
     try:
-        response = requests.get(history_url, timeout=5)
+        response = requests.get(history_url, headers=headers, timeout=5)
         response.raise_for_status()
         history_data = response.json()
     except requests.exceptions.RequestException as e:
@@ -38,7 +48,7 @@ def fetch_data():
     global_url = f"{API_BASE_URL}/pnl/global-history"
     global_data = []
     try:
-        response = requests.get(global_url, timeout=5)
+        response = requests.get(global_url, headers=headers, timeout=5)
         response.raise_for_status()
         global_data = response.json()
     except requests.exceptions.RequestException as e:
@@ -51,10 +61,10 @@ def fetch_data():
 def fetch_ytd_data(year):
     ytd_url = f"{API_BASE_URL}/pnl/ytd-history?year={year}"
     try:
-        response = requests.get(ytd_url, timeout=5)
+        response = requests.get(ytd_url, headers=get_headers(), timeout=5)
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         # Don't show error immediately to avoid clutter if year is not found
         return []
 
