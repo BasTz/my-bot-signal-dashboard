@@ -373,20 +373,37 @@ if history_data or global_data or ytd_data or position_data:
                     tooltip=['symbol', 'upnl', 'datetime']
                 )
 
-                chart_upnl = base.mark_bar().encode(
+                bars = base.mark_bar().encode(
                     color=alt.condition(
                         alt.datum.upnl >= 0,
                         alt.value("#2ecc71"),  # Green
                         alt.value("#e74c3c")   # Red
                     )
-                ) + base.mark_text(
+                )
+
+                text_pos = base.mark_text(
+                     align='right',
+                     baseline='middle',
+                     dx=-5,
+                     color='white'
+                ).encode(
+                     text=alt.Text('upnl:Q', format='.2f')
+                ).transform_filter(
+                     alt.datum.upnl >= 0
+                )
+
+                text_neg = base.mark_text(
                      align='left',
                      baseline='middle',
-                     dx=3
+                     dx=5,
+                     color='white'
                 ).encode(
-                     text=alt.Text('upnl:Q', format='.2f'),
-                     color=alt.value('white')
+                     text=alt.Text('upnl:Q', format='.2f')
+                ).transform_filter(
+                     alt.datum.upnl < 0
                 )
+
+                chart_upnl = bars + text_pos + text_neg
                 
                 st.altair_chart(chart_upnl, use_container_width=True)
                 
