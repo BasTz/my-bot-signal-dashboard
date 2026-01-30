@@ -371,10 +371,9 @@ if history_data or global_data or ytd_data or position_data:
                     st.dataframe(df.sort_values(by='datetime', ascending=False), use_container_width=True)
 
     # 4.3 KPI Cards
-    col1, col2, col3 = st.columns(3)
-    col1.metric("15m Unrealized PNL", f"{current_total_upnl:,.2f} USD")
-    col2.metric("Last Update", last_update_str)
-    col3.metric("Active Symbols", active_symbols_count)
+    col1, col2 = st.columns(2)
+    col1.metric("Last Update", last_update_str)
+    col2.metric("Active Symbols", active_symbols_count)
 
 else:
     st.info("No data available from API.")
