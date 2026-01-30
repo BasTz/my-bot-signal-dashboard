@@ -231,10 +231,10 @@ if history_data or global_data or ytd_data or position_data:
                     elif sym_diff < 0: diff_color = "#e74c3c"
                     
                     # Add to HTML
-                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:20%; font-size:0.7em;'>{sym}</td>"
-                    html_report += f"<td style='font-weight:bold; color:{side_color}; width:20%; font-size:0.7em;'>{side}</td>"
-                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color}; width:30%; font-size:0.7em;'>{upnl:+.2f} $</td>"
-                    html_report += f"<td style='text-align:right; font-family:monospace; color:{diff_color}; width:30%; font-size:0.7em;'>{diff_str}</td></tr>"
+                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:20%; font-size:0.8em;'>{sym}</td>"
+                    html_report += f"<td style='font-weight:bold; color:{side_color}; width:20%; font-size:0.8em;'>{side}</td>"
+                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color}; width:30%; font-size:0.8em;'>{upnl:+.2f} $</td>"
+                    html_report += f"<td style='text-align:right; font-family:monospace; color:{diff_color}; width:30%; font-size:0.8em;'>{diff_str}</td></tr>"
 
                     
                     # Add to Copy Msg
