@@ -298,12 +298,16 @@ if history_data or global_data or ytd_data or position_data:
             latest_ts = df['ts'].max()
             active_symbols_count = len(df[df['ts'] == latest_ts])
 
+            # Determine sort order based on latest PNL (High to Low)
+            latest_pnl_for_sort = df[df['ts'] == latest_ts].sort_values('upnl', ascending=False)
+            symbol_sort_order = latest_pnl_for_sort['symbol'].tolist()
+
             st.subheader("uPNL History per Symbol")
             # Altair Chart for Symbol History (Locked)
             chart_symbols = alt.Chart(df).mark_line().encode(
                 x=alt.X('datetime:T', title='Time', axis=alt.Axis(format='%H:%M')),
                 y=alt.Y('upnl:Q', title='uPNL (USD)'),
-                color=alt.Color('symbol:N', legend=alt.Legend(title='Symbol', orient='bottom')),
+                color=alt.Color('symbol:N', sort=symbol_sort_order, legend=alt.Legend(title=None, orient='bottom')),
                 tooltip=[
                     alt.Tooltip('datetime', title='Time', format='%H:%M:%S'),
                     'symbol',
