@@ -84,7 +84,7 @@ ytd_data = fetch_ytd_data(selected_year)
 # 4. แสดงผลข้อมูล
 if history_data or global_data or ytd_data:
     # 4.0 YTD History (New Section)
-    if ytd_data:
+    if ytd_data and isinstance(ytd_data, list):
         st.subheader(f"YTD Performance ({selected_year})")
         ytd_df = pd.DataFrame(ytd_data)
         if 'date' in ytd_df.columns:
