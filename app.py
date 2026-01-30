@@ -200,10 +200,28 @@ if history_data or global_data or ytd_data or position_data:
                 copy_msg += f"*15m Change*: `{diff:+.2f} USD`\n"
                 copy_msg += f"--------------------------------\n"
                 
+                # Add Symbol Breakdown
+                is_using_live_pos = False
+                positions_to_process = []
+                
+                if position_data and isinstance(position_data, list):
+                     is_using_live_pos = True
+                     positions_to_process = position_data
+                elif history_data:
+                     # Convert history to list of dicts for unified processing
+                     hist_df = pd.DataFrame(history_data)
+                     latest_ts = hist_df['ts'].max()
+                     current_syms = hist_df[hist_df['ts'] == latest_ts].sort_values('upnl', ascending=False)
+                     positions_to_process = current_syms.to_dict('records')
+
                 # --- Build HTML for Display (Colorful UI) ---
+                fallback_warning = ""
+                if not is_using_live_pos:
+                    fallback_warning = '<span style="color:#e67e22; font-size:0.8em; margin-left:10px;">(⚠️ History Data - Live API Failed)</span>'
+
                 html_report = f"""
                 <div style="background-color:#1E1E1E; padding:15px; border-radius:10px; border:1px solid #333;">
-                    <h4 style="margin-top:0; color:white;">💰 Total uPNL: <span style="color:{'#2ecc71' if current_total_upnl >= 0 else '#e74c3c'};">{current_total_upnl:+.2f} USD</span></h4>
+                    <h4 style="margin-top:0; color:white;">💰 Total uPNL: <span style="color:{'#2ecc71' if current_total_upnl >= 0 else '#e74c3c'};">{current_total_upnl:+.2f} USD</span>{fallback_warning}</h4>
                     <p style="color:#aaa; margin-bottom:5px;">📉 15m Change: <span style="color:{'#2ecc71' if diff >= 0 else '#e74c3c'};">{diff:+.2f} USD</span></p>
                     <p style="color:#aaa; margin-bottom:5px;">💰 Day Realized: <span style="color:{'#2ecc71' if realized_pnl >= 0 else '#e74c3c'};">{realized_pnl:+.2f} USD</span></p>
                     <p style="color:#aaa; margin-bottom:15px;">📈 YTD Realized: <span style="color:{'#2ecc71' if ytd_pnl >= 0 else '#e74c3c'};">{ytd_pnl:+.2f} USD</span></p>
@@ -218,20 +236,6 @@ if history_data or global_data or ytd_data or position_data:
                         </thead>
                         <tbody>
                 """
-
-                # Add Symbol Breakdown
-                is_using_live_pos = False
-
-                positions_to_process = []
-                if position_data and isinstance(position_data, list):
-                     is_using_live_pos = True
-                     positions_to_process = position_data
-                elif history_data:
-                     # Convert history to list of dicts for unified processing
-                     hist_df = pd.DataFrame(history_data)
-                     latest_ts = hist_df['ts'].max()
-                     current_syms = hist_df[hist_df['ts'] == latest_ts].sort_values('upnl', ascending=False)
-                     positions_to_process = current_syms.to_dict('records')
 
                 for pos in positions_to_process:
                     # Generic key access
