@@ -103,43 +103,6 @@ if history_data or global_data or ytd_data or position_data:
          if not ytd_df.empty and 'cumulative_pnl' in ytd_df.columns:
              latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl']
 
-         st.subheader(f"YTD Performance ({selected_year}) | Total: {latest_cum_pnl:,.4f} USD")
-         
-         if 'date' in ytd_df.columns:
-            ytd_df['date'] = pd.to_datetime(ytd_df['date'])
-            
-            # Create tabs for Cumulative PNL and Daily Income
-            tab1, tab2 = st.tabs(["Cumulative PNL", "Daily Income"])
-            
-            with tab1:
-                # Altair Chart for Cumulative PNL
-                chart_cum = alt.Chart(ytd_df).mark_line(color="#29b5e8").encode(
-                    x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
-                    y=alt.Y('cumulative_pnl:Q', title='Cumulative PNL (USD)'),
-                    tooltip=[
-                        alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
-                        alt.Tooltip('cumulative_pnl', title='Cum. PNL', format=',.4f')
-                    ]
-                )
-                st.altair_chart(chart_cum, use_container_width=True)
-            
-            with tab2:
-                # Altair Chart for Daily Income (with color coding)
-                chart_income = alt.Chart(ytd_df).mark_bar().encode(
-                    x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
-                    y=alt.Y('income:Q', title='Daily Income (USD)'),
-                    color=alt.condition(
-                        alt.datum.income >= 0,
-                        alt.value("#2ecc71"),  # Green
-                        alt.value("#e74c3c")   # Red
-                    ),
-                    tooltip=[
-                        alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
-                        alt.Tooltip('income', title='Income', format=',.4f')
-                    ]
-                )
-                st.altair_chart(chart_income, use_container_width=True)
-
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
     report_msg = ""
@@ -264,8 +227,6 @@ if history_data or global_data or ytd_data or position_data:
 
                 # Show Colorful Report
                 st.markdown(html_report, unsafe_allow_html=True)
-
-
              
              st.subheader("15m Total Unrealized PNL")
              # Altair Chart for Global PNL (Locked)
@@ -278,6 +239,31 @@ if history_data or global_data or ytd_data or position_data:
                  ]
              )
              st.altair_chart(chart_global, use_container_width=True)
+                
+    # --- Inserted Cumulative PNL Chart here ---
+    if ytd_data and isinstance(ytd_data, list):
+            ytd_df = pd.DataFrame(ytd_data)
+            if not ytd_df.empty and 'date' in ytd_df.columns:
+                ytd_df['date'] = pd.to_datetime(ytd_df['date'])
+            
+            st.divider() 
+            # Calculate Latest PNL and Color
+            latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if 'cumulative_pnl' in ytd_df.columns else 0.0
+            pnl_color = "#2ecc71" if latest_cum_pnl >= 0 else "#e74c3c"
+            
+            st.markdown(f"### YTD Cumulative PNL | Total: <span style='color:{pnl_color}'>{latest_cum_pnl:,.4f} USD</span>", unsafe_allow_html=True)
+            
+            # Altair Chart for Cumulative PNL
+            chart_cum = alt.Chart(ytd_df).mark_line(color="#29b5e8").encode(
+                x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
+                y=alt.Y('cumulative_pnl:Q', title='Cumulative PNL (USD)'),
+                tooltip=[
+                    alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
+                    alt.Tooltip('cumulative_pnl', title='Cum. PNL', format=',.4f')
+                ]
+            )
+            st.altair_chart(chart_cum, use_container_width=True)
+            st.divider()
 
     # 4.2 Symbol Data Processing
     active_symbols_count = 0
