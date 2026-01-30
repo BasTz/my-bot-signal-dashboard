@@ -195,51 +195,73 @@ if history_data or global_data or ytd_data or position_data:
                 ytd_icon = "📈" if ytd_pnl >= 0 else "📉"
                 ytd_sign = "+" if ytd_pnl >= 0 else ""
 
-                # --- Build Message ---
-                report_msg = f"💰 *Total uPNL*: {emoji_total} `{upnl_sign}{current_total_upnl:.2f} USD`{diff_str}\n"
-                report_msg += f"{realized_icon} *Day Realized*: `{realized_sign}{realized_pnl:.2f} USD`\n"
-                report_msg += f"{ytd_icon} *YTD Realized*: `{ytd_sign}{ytd_pnl:.2f} USD`\n"
-                report_msg += f"────────────────\n"
+                # --- Build Message for Copying (Telegram Markdown) ---
+                copy_msg = f"*Total uPNL*: {emoji_total} `{current_total_upnl:+.2f} USD`\n"
+                copy_msg += f"*15m Change*: `{diff:+.2f} USD`\n"
+                copy_msg += f"--------------------------------\n"
                 
+                # --- Build HTML for Display (Colorful UI) ---
+                html_report = f"""
+                <div style="background-color:#1E1E1E; padding:15px; border-radius:10px; border:1px solid #333;">
+                    <h3 style="margin-top:0; color:white;">💰 Total uPNL: <span style="color:{'#2ecc71' if current_total_upnl >= 0 else '#e74c3c'};">{current_total_upnl:+.2f} USD</span></h3>
+                    <p style="color:#aaa; margin-bottom:5px;">📉 15m Change: <span style="color:{'#2ecc71' if diff >= 0 else '#e74c3c'};">{diff:+.2f} USD</span></p>
+                    <p style="color:#aaa; margin-bottom:5px;">💰 Day Realized: <span style="color:{'#2ecc71' if realized_pnl >= 0 else '#e74c3c'};">{realized_pnl:+.2f} USD</span></p>
+                    <p style="color:#aaa; margin-bottom:15px;">📈 YTD Realized: <span style="color:{'#2ecc71' if ytd_pnl >= 0 else '#e74c3c'};">{ytd_pnl:+.2f} USD</span></p>
+                    <hr style="border-top: 1px solid #444;">
+                    <table style="width:100%; color:white;">
+                """
+
                 # Add Symbol Breakdown
                 is_using_live_pos = False
 
+                positions_to_process = []
                 if position_data and isinstance(position_data, list):
                      is_using_live_pos = True
-                     for pos in position_data:
-                        sym = pos.get('Symbol', 'Unknown')
-                        upnl = pos.get('uPNL', 0.0)
-                        side = pos.get('Side', '-')
-                        
-                        icon = "🟢" if upnl >= 0 else "🔴"
-                        pnl_str = f"{upnl:+.2f}"
-                        
-                        report_msg += f"`{sym:<6} | {side:<7}` {icon} `{pnl_str:>7} $`\n"
-
+                     positions_to_process = position_data
                 elif history_data:
-                    hist_df = pd.DataFrame(history_data)
-                    # ใช้ตัวล่าสุดของแต่ละเหรียญ
-                    latest_ts = hist_df['ts'].max()
-                    current_syms = hist_df[hist_df['ts'] == latest_ts].sort_values('upnl', ascending=False)
-                    
-                    for _, row in current_syms.iterrows():
-                        sym = row['symbol']
-                        upnl = row['upnl']
-                        side = row.get('side', '-') # ถ้าไม่มี Side ใส่ - ไว้ก่อน
-                        side_disp = side.upper() if isinstance(side, str) else "-"
-                        
-                        icon = "🟢" if upnl >= 0 else "🔴"
-                        pnl_str = f"{upnl:+.2f}"
-                        
-                        report_msg += f"`{sym:<6} | {side_disp:<7}` {icon} `{pnl_str:>7} $`\n"
+                     # Convert history to list of dicts for unified processing
+                     hist_df = pd.DataFrame(history_data)
+                     latest_ts = hist_df['ts'].max()
+                     current_syms = hist_df[hist_df['ts'] == latest_ts].sort_values('upnl', ascending=False)
+                     positions_to_process = current_syms.to_dict('records')
 
-                # Show Report in Sidebar or Expander
-                report_title = "📋 Copy Report (Telegram Format)"
+                for pos in positions_to_process:
+                    # Generic key access
+                    sym = pos.get('Symbol', pos.get('symbol', 'Unknown'))
+                    upnl = float(pos.get('uPNL', pos.get('upnl', 0.0)))
+                    side = pos.get('Side', pos.get('side', '-'))
+                    if not isinstance(side, str): side = '-'
+                    side = side.upper()
+
+                    # Colors
+                    side_color = "#2ecc71" if side == "LONG" else "#e74c3c" if side == "SHORT" else "#aaa"
+                    pnl_color = "#2ecc71" if upnl >= 0 else "#e74c3c"
+                    
+                    # Add to HTML
+                    html_report += f"""
+                    <tr>
+                        <td style="font-weight:bold; color:#3498db; width:30%;">{sym}</td>
+                        <td style="font-weight:bold; color:{side_color}; width:30%;">{side}</td>
+                        <td style="text-align:right; font-family:monospace; color:{pnl_color};">{upnl:+.2f} $</td>
+                    </tr>
+                    """
+                    
+                    # Add to Copy Msg
+                    icon = "🟢" if upnl >= 0 else "🔴"
+                    copy_msg += f"`{sym:<6} | {side:<5}` {icon} `{upnl:+.2f} $`\n"
+
+                html_report += "</table></div>"
+
+                # Show Colorful Report
+                st.markdown(html_report, unsafe_allow_html=True)
+
+                # Show Raw Text for Copying
+                report_title = "📋 Copy Code for Telegram"
                 if not is_using_live_pos:
                     report_title += " [⚠️ Falling back to History]"
                     
                 with st.expander(report_title):
-                    st.code(report_msg, language="markdown")
+                    st.code(copy_msg, language="markdown")
              
              st.subheader("15m Total Unrealized PNL")
              # Altair Chart for Global PNL (Locked)
