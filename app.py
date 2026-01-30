@@ -167,18 +167,34 @@ if history_data or global_data or ytd_data:
 
             # Bar Chart for Latest UPNL
             st.subheader("Current uPNL by Symbol")
-            latest_data_df = df[df['ts'] == latest_ts].set_index('symbol')['upnl'].sort_values()
+            # Altair Bar Chart for Latest UPNL with Custom Labels
+            latest_df = df[df['ts'] == latest_ts].copy()
+            latest_df['label'] = latest_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
+
+            base = alt.Chart(latest_df).encode(
+                x=alt.X('label:N', axis=alt.Axis(title='', labelAngle=0), sort=alt.EncodingSortField(field="upnl", order="ascending")),
+                y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                tooltip=['symbol', 'upnl', 'datetime']
+            )
+
+            chart_upnl = base.mark_bar().encode(
+                color=alt.condition(
+                    alt.datum.upnl >= 0,
+                    alt.value("#2ecc71"),  # Green
+                    alt.value("#e74c3c")   # Red
+                )
+            ) + base.mark_text(dy= -5 if latest_df['upnl'].max() < 0 else 5).encode(
+                 text=alt.Text('upnl:Q', format='.2f')
+            )
             
-            # Color coding (Optional: Streamlit bar chart is simple, but we can separate + and - if needed, 
-            # here we just show the standard bar chart first)
-            st.bar_chart(latest_data_df)
+            st.altair_chart(chart_upnl, use_container_width=True)
             
             with st.expander("Show Raw Symbol Data"):
                 st.dataframe(df.sort_values(by='datetime', ascending=False), use_container_width=True)
 
     # 4.3 KPI Cards
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Unrealized PNL", f"{current_total_upnl:,.2f} USD")
+    col1.metric("15m Unrealized PNL", f"{current_total_upnl:,.2f} USD")
     col2.metric("Last Update", last_update_str)
     col3.metric("Active Symbols", active_symbols_count)
 
@@ -186,10 +202,9 @@ else:
     st.info("No data available from API.")
 
 # 5. แสดงสถานะ connection
-col1, col2 = st.columns(2)
-status_color = "normal" if (history_data or global_data) else "off"
-col1.markdown("API Status", "Connected" if (history_data or global_data) else "Disconnected")
-# col2.metric("API URL", API_BASE_URL)
+st.divider()
+status_text = "🟢 Connected" if (history_data or global_data) else "🔴 Disconnected"
+st.caption(f"API Status: {status_text}")
 
 # 6. ปุ่ม Refresh
 if st.button('🔄 Refresh Data'):
