@@ -251,12 +251,43 @@ if history_data or global_data or ytd_data or position_data:
             latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if 'cumulative_pnl' in ytd_df.columns else 0.0
             pnl_color = "#2ecc71" if latest_cum_pnl >= 0 else "#e74c3c"
             
-            st.markdown(f"### YTD Cumulative PNL | Total: <span style='color:{pnl_color}'>{latest_cum_pnl:,.4f} USD</span>", unsafe_allow_html=True)
+            st.markdown(f"### YTD Cumulative PNL\nTotal: <span style='color:{pnl_color}'>{latest_cum_pnl:,.4f} USD</span>", unsafe_allow_html=True)
             
-            # Altair Chart for Cumulative PNL
-            chart_cum = alt.Chart(ytd_df).mark_line(color="#29b5e8").encode(
+            # Altair Chart for Cumulative PNL with Conditional Color (Green > 0, Red < 0)
+            y_min = ytd_df['cumulative_pnl'].min()
+            y_max = ytd_df['cumulative_pnl'].max()
+            
+            # Add padding to domain
+            pad = (y_max - y_min) * 0.1 if y_max != y_min else 1.0
+            domain_min = y_min - pad
+            domain_max = y_max + pad
+            
+            # Default color
+            line_color = alt.value("#29b5e8")
+
+            if y_max > 0 and y_min < 0:
+                # Calculate ratio for 0
+                zero_ratio = abs(domain_min) / (domain_max - domain_min)
+                
+                line_color = alt.Gradient(
+                    gradient='linear',
+                    stops=[
+                        alt.GradientStop(color='#e74c3c', offset=0),
+                        alt.GradientStop(color='#e74c3c', offset=zero_ratio),
+                        alt.GradientStop(color='#2ecc71', offset=zero_ratio),
+                        alt.GradientStop(color='#2ecc71', offset=1)
+                    ],
+                    x1=1, x2=1, y1=1, y2=0
+                )
+            elif y_min >= 0:
+                line_color = alt.value("#2ecc71") # All Green
+            elif y_max <= 0:
+                line_color = alt.value("#e74c3c") # All Red
+
+            chart_cum = alt.Chart(ytd_df).mark_line().encode(
                 x=alt.X('date:T', axis=alt.Axis(format='%d/%m', title='Date', labelAngle=0)),
-                y=alt.Y('cumulative_pnl:Q', title='Cumulative PNL (USD)'),
+                y=alt.Y('cumulative_pnl:Q', title='Cumulative PNL (USD)', scale=alt.Scale(domain=[domain_min, domain_max])),
+                color=line_color,
                 tooltip=[
                     alt.Tooltip('date', title='Date', format='%d/%m/%Y'),
                     alt.Tooltip('cumulative_pnl', title='Cum. PNL', format=',.4f')
