@@ -238,13 +238,10 @@ if history_data or global_data or ytd_data or position_data:
                     pnl_color = "#2ecc71" if upnl >= 0 else "#e74c3c"
                     
                     # Add to HTML
-                    html_report += f"""
-                    <tr>
-                        <td style="font-weight:bold; color:#3498db; width:30%;">{sym}</td>
-                        <td style="font-weight:bold; color:{side_color}; width:30%;">{side}</td>
-                        <td style="text-align:right; font-family:monospace; color:{pnl_color};">{upnl:+.2f} $</td>
-                    </tr>
-                    """
+                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:30%;'>{sym}</td>"
+                    html_report += f"<td style='font-weight:bold; color:{side_color}; width:30%;'>{side}</td>"
+                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color};'>{upnl:+.2f} $</td></tr>"
+
                     
                     # Add to Copy Msg
                     icon = "🟢" if upnl >= 0 else "🔴"
@@ -255,13 +252,10 @@ if history_data or global_data or ytd_data or position_data:
                 # Show Colorful Report
                 st.markdown(html_report, unsafe_allow_html=True)
 
-                # Show Raw Text for Copying
-                report_title = "📋 Copy Code for Telegram"
-                if not is_using_live_pos:
-                    report_title += " [⚠️ Falling back to History]"
-                    
-                with st.expander(report_title):
-                    st.code(copy_msg, language="markdown")
+                html_report += "</table></div>"
+
+                # Show Colorful Report
+                st.markdown(html_report, unsafe_allow_html=True)
              
              st.subheader("15m Total Unrealized PNL")
              # Altair Chart for Global PNL (Locked)
@@ -342,28 +336,28 @@ if history_data or global_data or ytd_data or position_data:
             elif not df.empty:
                 # Altair Bar Chart for Latest UPNL with Custom Labels (Fallback)
                 latest_df = df[df['ts'] == latest_ts].copy()
-            latest_df['label'] = latest_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
+                latest_df['label'] = latest_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
 
-            base = alt.Chart(latest_df).encode(
-                x=alt.X('label:N', axis=alt.Axis(title='', labelAngle=0), sort=alt.EncodingSortField(field="upnl", order="ascending")),
-                y=alt.Y('upnl:Q', title='uPNL (USD)'),
-                tooltip=['symbol', 'upnl', 'datetime']
-            )
-
-            chart_upnl = base.mark_bar().encode(
-                color=alt.condition(
-                    alt.datum.upnl >= 0,
-                    alt.value("#2ecc71"),  # Green
-                    alt.value("#e74c3c")   # Red
+                base = alt.Chart(latest_df).encode(
+                    x=alt.X('label:N', axis=alt.Axis(title='', labelAngle=0), sort=alt.EncodingSortField(field="upnl", order="ascending")),
+                    y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                    tooltip=['symbol', 'upnl', 'datetime']
                 )
-            ) + base.mark_text(dy= -5 if latest_df['upnl'].max() < 0 else 5).encode(
-                 text=alt.Text('upnl:Q', format='.2f')
-            )
-            
-            st.altair_chart(chart_upnl, use_container_width=True)
-            
-            with st.expander("Show Raw Symbol Data"):
-                st.dataframe(df.sort_values(by='datetime', ascending=False), use_container_width=True)
+
+                chart_upnl = base.mark_bar().encode(
+                    color=alt.condition(
+                        alt.datum.upnl >= 0,
+                        alt.value("#2ecc71"),  # Green
+                        alt.value("#e74c3c")   # Red
+                    )
+                ) + base.mark_text(dy= -5 if latest_df['upnl'].max() < 0 else 5).encode(
+                     text=alt.Text('upnl:Q', format='.2f')
+                )
+                
+                st.altair_chart(chart_upnl, use_container_width=True)
+                
+                with st.expander("Show Raw Symbol Data"):
+                    st.dataframe(df.sort_values(by='datetime', ascending=False), use_container_width=True)
 
     # 4.3 KPI Cards
     col1, col2, col3 = st.columns(3)
