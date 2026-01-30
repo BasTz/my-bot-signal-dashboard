@@ -208,7 +208,15 @@ if history_data or global_data or ytd_data or position_data:
                     <p style="color:#aaa; margin-bottom:5px;">💰 Day Realized: <span style="color:{'#2ecc71' if realized_pnl >= 0 else '#e74c3c'};">{realized_pnl:+.2f} USD</span></p>
                     <p style="color:#aaa; margin-bottom:15px;">📈 YTD Realized: <span style="color:{'#2ecc71' if ytd_pnl >= 0 else '#e74c3c'};">{ytd_pnl:+.2f} USD</span></p>
                     <hr style="border-top: 1px solid #444;">
-                    <table style="width:100%; color:white;">
+                    <table style="width:100%; color:white; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #333;">
+                                <th style="text-align:left; color:#888; padding-bottom:5px;">Symbol</th>
+                                <th style="text-align:left; color:#888; padding-bottom:5px;">Side</th>
+                                <th style="text-align:right; color:#888; padding-bottom:5px;">uPNL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 """
 
                 # Add Symbol Breakdown
@@ -247,7 +255,7 @@ if history_data or global_data or ytd_data or position_data:
                     icon = "🟢" if upnl >= 0 else "🔴"
                     copy_msg += f"`{sym:<6} | {side:<5}` {icon} `{upnl:+.2f} $`\n"
 
-                html_report += "</table></div>"
+                html_report += "</tbody></table></div>"
 
                 # Show Colorful Report
                 st.markdown(html_report, unsafe_allow_html=True)
