@@ -78,19 +78,22 @@ if history_data or global_data or ytd_data:
         ytd_df = pd.DataFrame(ytd_data)
         if 'date' in ytd_df.columns:
             ytd_df['date'] = pd.to_datetime(ytd_df['date'])
+            # Format date as DD/MM for simpler display (removes Mon, Tue, etc.)
+            ytd_df['date_display'] = ytd_df['date'].dt.strftime('%d/%m')
             
             # Create tabs for Cumulative PNL and Daily Income
             tab1, tab2 = st.tabs(["Cumulative PNL", "Daily Income"])
             
             with tab1:
-                st.line_chart(ytd_df.set_index('date')['cumulative_pnl'], color="#29b5e8")
+                # Use date_display as index for the chart
+                st.line_chart(ytd_df.set_index('date_display')['cumulative_pnl'], color="#29b5e8")
                 
                 # Show latest cumulative PNL
                 latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if not ytd_df.empty else 0
                 st.metric(f"Total Cumulative PNL ({selected_year})", f"{latest_cum_pnl:,.4f} USD")
 
             with tab2:
-                st.bar_chart(ytd_df.set_index('date')['income'])
+                st.bar_chart(ytd_df.set_index('date_display')['income'])
 
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
