@@ -322,9 +322,13 @@ if history_data or global_data or ytd_data or position_data:
                  if 'uPNL' in pos_df.columns: pos_df['upnl'] = pos_df['uPNL']
                  if 'Symbol' in pos_df.columns: pos_df['symbol'] = pos_df['Symbol']
 
+                 # Sort for Chart (Max Profit Top)
+                 pos_df = pos_df.sort_values(by='upnl', ascending=False)
+                 symbol_order = pos_df['symbol'].tolist()
+
                  base = alt.Chart(pos_df).encode(
                     x=alt.X('upnl:Q', title='uPNL (USD)'),
-                    y=alt.Y('symbol:N', title='', sort=alt.EncodingSortField(field="upnl", order="descending")),
+                    y=alt.Y('symbol:N', title='', sort=symbol_order),
                     tooltip=['Symbol', 'uPNL', 'Side']
                  )
 
@@ -367,9 +371,14 @@ if history_data or global_data or ytd_data or position_data:
             elif not df.empty:
                 # Altair Bar Chart for Latest UPNL with Custom Labels (Fallback)
                 latest_df = df[df['ts'] == latest_ts].copy()
+                
+                # Sort for Chart
+                latest_df = latest_df.sort_values(by='upnl', ascending=False)
+                symbol_order = latest_df['symbol'].tolist()
+
                 base = alt.Chart(latest_df).encode(
                     x=alt.X('upnl:Q', title='uPNL (USD)'),
-                    y=alt.Y('symbol:N', title='', sort=alt.EncodingSortField(field="upnl", order="descending")),
+                    y=alt.Y('symbol:N', title='', sort=symbol_order),
                     tooltip=['symbol', 'upnl', 'datetime']
                 )
 
