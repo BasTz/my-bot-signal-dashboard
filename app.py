@@ -87,7 +87,7 @@ st.sidebar.header("Configuration")
 current_year = datetime.datetime.now().year
 selected_year = st.sidebar.number_input("Select Year", min_value=2023, max_value=current_year + 1, value=current_year)
 st.sidebar.divider()
-auto_refresh = st.sidebar.checkbox("Enable Auto Refresh", value=False)
+auto_refresh = st.sidebar.checkbox("Enable Auto Refresh", value=True)
 refresh_interval = st.sidebar.number_input("Refresh Interval (seconds)", min_value=10, value=60)
 
 history_data, global_data = fetch_data()
