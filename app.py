@@ -85,7 +85,7 @@ ytd_data = fetch_ytd_data(selected_year)
 if history_data or global_data or ytd_data:
     # 4.0 YTD History (New Section)
     if ytd_data and isinstance(ytd_data, list):
-        st.subheader(f"YTD Performance ({selected_year})")
+        st.subheader(f"YTD Performance ({selected_year})\nTotal Cumulative PNL ({selected_year}) {latest_cum_pnl:,.4f} USD")
         ytd_df = pd.DataFrame(ytd_data)
         if 'date' in ytd_df.columns:
             ytd_df['date'] = pd.to_datetime(ytd_df['date'])
@@ -107,7 +107,6 @@ if history_data or global_data or ytd_data:
                 
                 # Show latest cumulative PNL
                 latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if not ytd_df.empty else 0
-                st.metric(f"Total Cumulative PNL ({selected_year})", f"{latest_cum_pnl:,.4f} USD")
 
             with tab2:
                 # Altair Chart for Daily Income (with color coding)
