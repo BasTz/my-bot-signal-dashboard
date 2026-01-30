@@ -10,7 +10,7 @@ import time
 st.set_page_config(page_title="Crypto Bot Dashboard", layout="wide")
 
 # 2. หัวข้อ
-st.title("📈 Bitcoin Signal Dashboard")
+st.title("📈 Crypto Signal Dashboard")
 st.caption("ข้อมูล Real-time จาก Bot")
 
 # Configuration: URL สำหรับ API (รองรับการเปลี่ยนเป็น Cloud URL ผ่าน st.secrets หรือ Environment Variable)
@@ -68,6 +68,18 @@ def fetch_ytd_data(year):
         # Don't show error immediately to avoid clutter if year is not found
         return []
 
+# Function to fetch Open Positions (Real-time)
+@st.cache_data(ttl=15) # Cache shorter for real-time positions
+def fetch_open_positions():
+    url = f"{API_BASE_URL}/position/open"
+    headers = get_headers()
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException:
+        return []
+
 import datetime
 
 # Sidebar Configuration
@@ -80,9 +92,10 @@ refresh_interval = st.sidebar.number_input("Refresh Interval (seconds)", min_val
 
 history_data, global_data = fetch_data()
 ytd_data = fetch_ytd_data(selected_year)
+position_data = fetch_open_positions()
 
 # 4. แสดงผลข้อมูล
-if history_data or global_data or ytd_data:
+if history_data or global_data or ytd_data or position_data:
     # 4.0 YTD History (New Section)
     latest_cum_pnl = 0.0
     if ytd_data and isinstance(ytd_data, list):
@@ -129,6 +142,7 @@ if history_data or global_data or ytd_data:
 
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
+    report_msg = ""
     
     if global_data:
         global_df = pd.DataFrame(global_data)
@@ -139,9 +153,87 @@ if history_data or global_data or ytd_data:
              # หาค่าล่าสุดสำหรับ Metric
              if not global_df.empty:
                 # เรียงตามเวลาเพื่อให้แน่ใจว่าได้ตัวล่าสุด
-                latest_global = global_df.sort_values('ts').iloc[-1]
+                global_df = global_df.sort_values('ts')
+                latest_global = global_df.iloc[-1]
                 current_total_upnl = latest_global['upnl']
                 
+                # --- Calculate 15Min Change ---
+                diff = 0.0
+                try:
+                    # หาข้อมูลเมื่อ 15 นาทีที่แล้ว (900 วินาที)
+                    target_ts = latest_global['ts'] - 900
+                    # หา index ของข้อมูลที่ใกล้เคียงที่สุด
+                    idx = (global_df['ts'] - target_ts).abs().idxmin()
+                    past_val = global_df.loc[idx]['upnl']
+                    diff = current_total_upnl - past_val
+                except Exception:
+                    diff = 0.0 # กรณีข้อมูลไม่พอ
+                    
+                # --- Prepare Report Variables ---
+                emoji_total = "🟢" if current_total_upnl >= 0 else "🔴"
+                upnl_sign = "+" if current_total_upnl >= 0 else ""
+                
+                diff_icon = "🟢" if diff >= 0 else "🔴"
+                diff_sign = "+" if diff >= 0 else ""
+                diff_str = f"\n📉 *15Min Change*: {diff_icon} `{diff_sign}{diff:.2f} USD`"
+                
+                realized_pnl = 0.0
+                ytd_pnl = 0.0
+                
+                # Try to get Realized PNL from YTD Data
+                if ytd_data and isinstance(ytd_data, list):
+                     ytd_df_rep = pd.DataFrame(ytd_data)
+                     if not ytd_df_rep.empty:
+                         # Assume last entry is today
+                         last_ytd = ytd_df_rep.iloc[-1]
+                         realized_pnl = last_ytd.get('income', 0.0)
+                         ytd_pnl = last_ytd.get('cumulative_pnl', 0.0)
+
+                realized_icon = "💰" if realized_pnl >= 0 else "💸"
+                realized_sign = "+" if realized_pnl >= 0 else ""
+                
+                ytd_icon = "📈" if ytd_pnl >= 0 else "📉"
+                ytd_sign = "+" if ytd_pnl >= 0 else ""
+
+                # --- Build Message ---
+                report_msg = f"💰 *Total uPNL*: {emoji_total} `{upnl_sign}{current_total_upnl:.2f} USD`{diff_str}\n"
+                report_msg += f"{realized_icon} *Day Realized*: `{realized_sign}{realized_pnl:.2f} USD`\n"
+                report_msg += f"{ytd_icon} *YTD Realized*: `{ytd_sign}{ytd_pnl:.2f} USD`\n"
+                report_msg += f"────────────────\n"
+                
+                # Add Symbol Breakdown
+                if position_data and isinstance(position_data, list):
+                     for pos in position_data:
+                        sym = pos.get('Symbol', 'Unknown')
+                        upnl = pos.get('uPNL', 0.0)
+                        side = pos.get('Side', '-')
+                        
+                        icon = "🟢" if upnl >= 0 else "🔴"
+                        pnl_str = f"{upnl:+.2f}"
+                        
+                        report_msg += f"`{sym:<6} | {side:<7}` {icon} `{pnl_str:>7} $`\n"
+
+                elif history_data:
+                    hist_df = pd.DataFrame(history_data)
+                    # ใช้ตัวล่าสุดของแต่ละเหรียญ
+                    latest_ts = hist_df['ts'].max()
+                    current_syms = hist_df[hist_df['ts'] == latest_ts].sort_values('upnl', ascending=False)
+                    
+                    for _, row in current_syms.iterrows():
+                        sym = row['symbol']
+                        upnl = row['upnl']
+                        side = row.get('side', '-') # ถ้าไม่มี Side ใส่ - ไว้ก่อน
+                        side_disp = side.upper() if isinstance(side, str) else "-"
+                        
+                        icon = "🟢" if upnl >= 0 else "🔴"
+                        pnl_str = f"{upnl:+.2f}"
+                        
+                        report_msg += f"`{sym:<6} | {side_disp:<7}` {icon} `{pnl_str:>7} $`\n"
+
+                # Show Report in Sidebar or Expander
+                with st.expander("📋 Copy Report (Telegram Format)"):
+                    st.code(report_msg, language="markdown")
+             
              st.subheader("15m Total Unrealized PNL")
              # Altair Chart for Global PNL (Locked)
              chart_global = alt.Chart(global_df).mark_line().encode(
@@ -188,8 +280,39 @@ if history_data or global_data or ytd_data:
 
             # Bar Chart for Latest UPNL
             st.subheader("Current uPNL by Symbol")
-            # Altair Bar Chart for Latest UPNL with Custom Labels
-            latest_df = df[df['ts'] == latest_ts].copy()
+            
+            # Use Position Data for Bar Chart if available (More accurate)
+            if position_data and isinstance(position_data, list):
+                 pos_df = pd.DataFrame(position_data)
+                 # Normalize column names
+                 if 'uPNL' in pos_df.columns: pos_df['upnl'] = pos_df['uPNL']
+                 if 'Symbol' in pos_df.columns: pos_df['symbol'] = pos_df['Symbol']
+
+                 pos_df['label'] = pos_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
+
+                 base = alt.Chart(pos_df).encode(
+                    x=alt.X('label:N', axis=alt.Axis(title='', labelAngle=0), sort=alt.EncodingSortField(field="upnl", order="ascending")),
+                    y=alt.Y('upnl:Q', title='uPNL (USD)'),
+                    tooltip=['Symbol', 'uPNL', 'Side']
+                 )
+
+                 chart_upnl = base.mark_bar().encode(
+                    color=alt.condition(
+                        alt.datum.upnl >= 0,
+                        alt.value("#2ecc71"),  # Green
+                        alt.value("#e74c3c")   # Red
+                    )
+                 ) + base.mark_text(dy= -5 if pos_df['upnl'].max() < 0 else 5).encode(
+                     text=alt.Text('upnl:Q', format='.2f')
+                 )
+                 st.altair_chart(chart_upnl, use_container_width=True)
+                 
+                 with st.expander("Show Raw Position Data"):
+                     st.dataframe(pos_df, use_container_width=True)
+
+            elif not df.empty:
+                # Altair Bar Chart for Latest UPNL with Custom Labels (Fallback)
+                latest_df = df[df['ts'] == latest_ts].copy()
             latest_df['label'] = latest_df.apply(lambda x: f"{x['symbol']}\n{x['upnl']:.2f}", axis=1)
 
             base = alt.Chart(latest_df).encode(
