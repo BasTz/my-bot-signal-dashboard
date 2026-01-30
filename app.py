@@ -202,7 +202,7 @@ if history_data or global_data or ytd_data or position_data:
                                 <th style="text-align:left; color:#888; padding-bottom:5px;">Symbol</th>
                                 <th style="text-align:left; color:#888; padding-bottom:5px;">Side</th>
                                 <th style="text-align:right; color:#888; padding-bottom:5px;">uPNL</th>
-                                <th style="text-align:right; color:#888; padding-bottom:5px;">Diff (15m)</th>
+                                <th style="text-align:right; color:#888; padding-bottom:5px;">Diff</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -231,9 +231,9 @@ if history_data or global_data or ytd_data or position_data:
                     elif sym_diff < 0: diff_color = "#e74c3c"
                     
                     # Add to HTML
-                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:25%;'>{sym}</td>"
+                    html_report += f"<tr><td style='font-weight:bold; color:#3498db; width:20%;'>{sym}</td>"
                     html_report += f"<td style='font-weight:bold; color:{side_color}; width:20%;'>{side}</td>"
-                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color}; width:25%;'>{upnl:+.2f} $</td>"
+                    html_report += f"<td style='text-align:right; font-family:monospace; color:{pnl_color}; width:30%;'>{upnl:+.2f} $</td>"
                     html_report += f"<td style='text-align:right; font-family:monospace; color:{diff_color}; width:30%; font-size:0.9em;'>{diff_str}</td></tr>"
 
                     
