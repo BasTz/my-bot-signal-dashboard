@@ -371,19 +371,11 @@ if history_data or global_data or ytd_data or position_data:
                         alt.value("#e74c3c")   # Red
                     )
                 ) + base.mark_text(
-                     baseline='middle'
+                     align='left',
+                     baseline='middle',
+                     dx=3
                 ).encode(
                      text=alt.Text('upnl:Q', format='.2f'),
-                     align=alt.condition(
-                         alt.datum.upnl >= 0,
-                         alt.value('right'),
-                         alt.value('left')
-                     ),
-                     dx=alt.condition(
-                         alt.datum.upnl >= 0,
-                         alt.value(-5),
-                         alt.value(5)
-                     ),
                      color=alt.value('white')
                 )
                 
