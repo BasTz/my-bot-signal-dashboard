@@ -199,10 +199,10 @@ if history_data or global_data or ytd_data or position_data:
                     <table style="width:100%; color:white; border-collapse: collapse;">
                         <thead>
                             <tr style="border-bottom: 1px solid #333;">
-                                <th style="text-align:left; color:#888; padding-bottom:5px;">Symbol</th>
-                                <th style="text-align:left; color:#888; padding-bottom:5px;">Side</th>
-                                <th style="text-align:right; color:#888; padding-bottom:5px;">uPNL</th>
-                                <th style="text-align:right; color:#888; padding-bottom:5px;">Diff</th>
+                                <th style="text-align:left; color:#888; padding-bottom:5px; font-size:0.9em;">Symbol</th>
+                                <th style="text-align:left; color:#888; padding-bottom:5px; font-size:0.9em;">Side</th>
+                                <th style="text-align:right; color:#888; padding-bottom:5px; font-size:0.9em;">uPNL</th>
+                                <th style="text-align:right; color:#888; padding-bottom:5px; font-size:0.9em;">Diff</th>
                             </tr>
                         </thead>
                         <tbody>
