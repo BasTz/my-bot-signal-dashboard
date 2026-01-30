@@ -45,10 +45,53 @@ def fetch_data():
 
     return history_data, global_data
 
+# Function to fetch YTD data (separate cache to allow year change)
+@st.cache_data(ttl=300)
+def fetch_ytd_data(year):
+    ytd_url = f"{API_BASE_URL}/pnl/ytd-history?year={year}"
+    try:
+        response = requests.get(ytd_url, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        # Don't show error immediately to avoid clutter if year is not found
+        return []
+
+import datetime
+
+# Sidebar Configuration
+st.sidebar.header("Configuration")
+current_year = datetime.datetime.now().year
+selected_year = st.sidebar.number_input("Select Year", min_value=2023, max_value=current_year + 1, value=current_year)
+st.sidebar.divider()
+auto_refresh = st.sidebar.checkbox("Enable Auto Refresh", value=False)
+refresh_interval = st.sidebar.number_input("Refresh Interval (seconds)", min_value=10, value=60)
+
 history_data, global_data = fetch_data()
+ytd_data = fetch_ytd_data(selected_year)
 
 # 4. แสดงผลข้อมูล
-if history_data or global_data:
+if history_data or global_data or ytd_data:
+    # 4.0 YTD History (New Section)
+    if ytd_data:
+        st.subheader(f"YTD Performance ({selected_year})")
+        ytd_df = pd.DataFrame(ytd_data)
+        if 'date' in ytd_df.columns:
+            ytd_df['date'] = pd.to_datetime(ytd_df['date'])
+            
+            # Create tabs for Cumulative PNL and Daily Income
+            tab1, tab2 = st.tabs(["Cumulative PNL", "Daily Income"])
+            
+            with tab1:
+                st.line_chart(ytd_df.set_index('date')['cumulative_pnl'], color="#29b5e8")
+                
+                # Show latest cumulative PNL
+                latest_cum_pnl = ytd_df.iloc[-1]['cumulative_pnl'] if not ytd_df.empty else 0
+                st.metric(f"Total Cumulative PNL ({selected_year})", f"{latest_cum_pnl:,.4f} USD")
+
+            with tab2:
+                st.bar_chart(ytd_df.set_index('date')['income'])
+
     # 4.1 Global Data Processing (Total PNL)
     current_total_upnl = 0.0
     
@@ -64,7 +107,7 @@ if history_data or global_data:
                 latest_global = global_df.sort_values('ts').iloc[-1]
                 current_total_upnl = latest_global['upnl']
                 
-             st.subheader("15m Unrealized PNL")
+             st.subheader("15m Total Unrealized PNL")
              st.line_chart(global_df.set_index('datetime')['upnl'])
 
     # 4.2 Symbol Data Processing
@@ -118,11 +161,6 @@ col1.markdown("API Status", "Connected" if (history_data or global_data) else "D
 if st.button('🔄 Refresh Data'):
     st.cache_data.clear()
     st.rerun()
-
-# 7. Auto Refresh Logic
-st.sidebar.header("Configuration")
-auto_refresh = st.sidebar.checkbox("Enable Auto Refresh", value=False)
-refresh_interval = st.sidebar.number_input("Refresh Interval (seconds)", min_value=10, value=60)
 
 if auto_refresh:
     time.sleep(refresh_interval)
