@@ -202,7 +202,10 @@ if history_data or global_data or ytd_data or position_data:
                 report_msg += f"────────────────\n"
                 
                 # Add Symbol Breakdown
+                is_using_live_pos = False
+
                 if position_data and isinstance(position_data, list):
+                     is_using_live_pos = True
                      for pos in position_data:
                         sym = pos.get('Symbol', 'Unknown')
                         upnl = pos.get('uPNL', 0.0)
@@ -231,7 +234,11 @@ if history_data or global_data or ytd_data or position_data:
                         report_msg += f"`{sym:<6} | {side_disp:<7}` {icon} `{pnl_str:>7} $`\n"
 
                 # Show Report in Sidebar or Expander
-                with st.expander("📋 Copy Report (Telegram Format)"):
+                report_title = "📋 Copy Report (Telegram Format)"
+                if not is_using_live_pos:
+                    report_title += " [⚠️ Falling back to History]"
+                    
+                with st.expander(report_title):
                     st.code(report_msg, language="markdown")
              
              st.subheader("15m Total Unrealized PNL")
