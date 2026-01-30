@@ -147,7 +147,8 @@ if history_data or global_data or ytd_data or position_data:
     if global_data:
         global_df = pd.DataFrame(global_data)
         if 'ts' in global_df.columns:
-            global_df['datetime'] = pd.to_datetime(global_df['ts'], unit='s')
+            # Convert to Asia/Bangkok Timezone
+            global_df['datetime'] = pd.to_datetime(global_df['ts'], unit='s', utc=True).dt.tz_convert('Asia/Bangkok')
             
         if 'upnl' in global_df.columns:
              # หาค่าล่าสุดสำหรับ Metric
@@ -286,7 +287,8 @@ if history_data or global_data or ytd_data or position_data:
         df = pd.DataFrame(history_data)
         
         if 'ts' in df.columns:
-            df['datetime'] = pd.to_datetime(df['ts'], unit='s')
+            # Convert to Asia/Bangkok Timezone
+            df['datetime'] = pd.to_datetime(df['ts'], unit='s', utc=True).dt.tz_convert('Asia/Bangkok')
             last_update_str = df['datetime'].max().strftime('%H:%M:%S')
             
             # Pivot for chart
